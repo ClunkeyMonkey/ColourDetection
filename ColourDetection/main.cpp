@@ -1,148 +1,131 @@
 #include <opencv2\opencv.hpp>
-#include <cstdio>
 #include "json.hpp"
 
 using namespace cv;
 using namespace std;
 using json = nlohmann::json;
 
+void getCircles(json vals, char* s);
+void getRed(Mat* imageIn, Mat* image, json vals);
+void getYel(Mat* imageIn, Mat* image, json vals);
+void getBlu(Mat* imageIn, Mat* image, json vals);
+
 int main() {
-	Mat imageRGB, imageGrey, imageHSV, imageR, imageR1, imageR2, imageY, imageB, imageNB;
-	Mat imageTest, imageOut, imageEdge, imageCir;
+	json values = {
+		{ "Image 1.jpg",{
+			{ "R",{ { "d1",1 },{ "e1",1 },{ "d2",4 },{ "e2",1 },{ "gaus",11 },{ "cMin",70 },{ "dist",20 } } },
+			{ "B",{ { "d1",4 },{ "e1",2 },{ "d2",2 },{ "e2",1 },{ "gaus",9 },{ "cMin",56 },{ "dist",30 } } },
+			{ "Y",{ { "d1",2 },{ "e1",1 },{ "d2",2 },{ "e2",1 },{ "gaus",11 },{ "cMin",56 },{ "dist",30 } } } } },
+		{ "Image 2.jpg",{
+			{ "R",{ { "d1",4 },{ "e1",1 },{ "d2",4 },{ "e2",2 },{ "gaus",11 },{ "cMin",70 },{ "dist",18 } } },
+			{ "B",{ { "d1",2 },{ "e1",2 },{ "d2",3 },{ "e2",1 },{ "gaus",9 },{ "cMin",56 },{ "dist",30 } } },
+			{ "Y",{ { "d1",1 },{ "e1",4 },{ "d2",1 },{ "e2",2 },{ "gaus",9 },{ "cMin",56 },{ "dist",17 } } } } },
+		{ "Image 3.jpg",{
+			{ "R",{ { "d1",4 },{ "e1",1 },{ "d2",4 },{ "e2",1 },{ "gaus",11 },{ "cMin",56 },{ "dist",20 } } },
+			{ "B",{ { "d1",4 },{ "e1",1 },{ "d2",3 },{ "e2",1 },{ "gaus",9 },{ "cMin",56 },{ "dist",21 } } },
+			{ "Y",{ { "d1",1 },{ "e1",2 },{ "d2",1 },{ "e2",1 },{ "gaus",9 },{ "cMin",56 },{ "dist",23 } } } } },
+		{ "Image 4.jpg",{
+			{ "R",{ { "d1",1 },{ "e1",1 },{ "d2",4 },{ "e2",2 },{ "gaus",11 },{ "cMin",56 },{ "dist",20 } } },
+			{ "B",{ { "d1",4 },{ "e1",1 },{ "d2",2 },{ "e2",1 },{ "gaus",9 },{ "cMin",56 },{ "dist",21 } } },
+			{ "Y",{ { "d1",1 },{ "e1",2 },{ "d2",1 },{ "e2",1 },{ "gaus",9 },{ "cMin",56 },{ "dist",24 } } } } },
+		{ "Image 5.jpg",{
+			{ "R",{ { "d1",2 },{ "e1",3 },{ "d2",3 },{ "e2",2 },{ "gaus",11 },{ "cMin",70 },{ "dist",22 } } },
+			{ "B",{ { "d1",1 },{ "e1",2 },{ "d2",1 },{ "e2",1 },{ "gaus",9 },{ "cMin",56 },{ "dist",22 } } },
+			{ "Y",{ { "d1",1 },{ "e1",2 },{ "d2",1 },{ "e2",1 },{ "gaus",9 },{ "cMin",56 },{ "dist",26 } } } } }
+	};
 
-	Mat image1in, image2in, image3in, image4in, image5in;
 	Mat image1, image2, image3, image4, image5;
-	Mat image1out, image2out, image3out, image4out, image5out;
+	char s[] = "Image x.jpg";
+	int i = 0;
 
-	vector<Vec3f> circles;
-	int image = 0;
-	int lowH = 0;
-	int highH = 179;
-	int lowS = 0;
-	int highS = 255;
-	int lowV = 0;
-	int highV = 255;
-	bool read = false;
-	char s[] = "Image 5.jpg";
-	int val = 10;
-
-	image1in = imread("Image 1.jpg", CV_LOAD_IMAGE_COLOR);
-	resize(image1in, image1in, Size(image1in.cols / val, image1in.rows / val));
-	cvtColor(image1in, image1, COLOR_BGR2HSV);
-
-	image2in = imread("Image 2.jpg", CV_LOAD_IMAGE_COLOR);
-	resize(image2in, image2in, Size(image2in.cols / val, image2in.rows / val));
-	cvtColor(image2in, image2, COLOR_BGR2HSV);
-
-	image3in = imread("Image 3.jpg", CV_LOAD_IMAGE_COLOR);
-	resize(image3in, image3in, Size(image3in.cols / val, image3in.rows / val));
-	cvtColor(image3in, image3, COLOR_BGR2HSV);
-
-	image4in = imread("Image 4.jpg", CV_LOAD_IMAGE_COLOR);
-	resize(image4in, image4in, Size(image4in.cols / val, image4in.rows / val));
-	cvtColor(image4in, image4, COLOR_BGR2HSV);
-
-	image5in = imread("Image 5.jpg", CV_LOAD_IMAGE_COLOR);
-
-	resize(image5in, image5in, Size(image5in.cols / val, image5in.rows / val));
-	cvtColor(image5in, image5, COLOR_BGR2HSV);
-
-	namedWindow("Control", CV_WINDOW_AUTOSIZE);
-	//cvCreateTrackbar("Image", "Control", &image, 4);
-	cvCreateTrackbar("LowH", "Control", &lowH, 179);
-	cvCreateTrackbar("HighH", "Control", &highH, 179);
-	cvCreateTrackbar("LowS", "Control", &lowS, 255);
-	cvCreateTrackbar("HighS", "Control", &highS, 255);
-	cvCreateTrackbar("LowV", "Control", &lowV, 255);
-	cvCreateTrackbar("HighV", "Control", &highV, 255);
-
-	while (true) {
-		/*if (read == false) {
-			s[6] = image + 49;
-			imageRGB = imread(s, CV_LOAD_IMAGE_COLOR);
-			resize(imageRGB, imageRGB, Size(imageRGB.cols / 4, imageRGB.rows / 4));
-			cvtColor(imageRGB, imageGrey, COLOR_BGR2GRAY);
-			cvtColor(imageRGB, imageHSV, COLOR_BGR2HSV);
-			Canny(imageRGB, imageEdge, 75, 20);
-
-
-			inRange(imageHSV, Scalar(0, 0, 0), Scalar(4, 255, 255), imageR1);
-			inRange(imageHSV, Scalar(160, 0, 0), Scalar(179, 255, 255), imageR2);
-			addWeighted(imageR1, 1, imageR2, 1, 0, imageR);
-			inRange(imageHSV, Scalar(25, 0, 0), Scalar(70, 255, 255), imageY);
-			inRange(imageHSV, Scalar(90, 0, 0), Scalar(130, 255, 255), imageB);
-			inRange(imageHSV, Scalar(7, 0, 0), Scalar(20, 255, 255), imageNB);
-			imageOut = imageR + imageY + imageB;
-
-			//inRange(imageHSV, Scalar(lowH, 0, 0), Scalar(highH, 255, 255), imageTest);
-
-			dilate(imageOut, imageTest, Mat(), Point(-1, -1), 2, 1, 1);
-			erode(imageTest, imageTest, Mat(), Point(-1, -1), 1, 1, 1);
-
-			//imshow("nb", imageNB);
-
-			HoughCircles(imageTest, circles, CV_HOUGH_GRADIENT, 1, 10, 100, 10, cMin, cMax);
-			imageCir = Mat(Size(imageTest.cols, imageTest.rows), CV_8UC1);
-			cout << circles.size() << endl;
-			for (size_t i = 0; i < circles.size(); i++)
-			{
-				Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-				if ((imageTest.at<uchar>(center.y, center.x) > 128) /*&& (imageNB.at<uchar>(center.y, center.x) < 128)/) {
-					int radius = cvRound(circles[i][2]);
-					// circle center
-					circle(imageTest, center, 3, Scalar(150, 150, 150), -1, 8, 0);
-					// circle outline 
-					circle(imageTest, center, radius, Scalar(150, 150, 150), 1, 8, 0);
-				}
-			}
-			//imshow("Circles", imageCir);
-			imshow("Edge", imageTest);
-			read = true;
-		}*/
-
-		/*inRange(imageHSV, Scalar(0, 0, 0), Scalar(4, 255, 255), imageR1);
-		inRange(imageHSV, Scalar(170, 0, 0), Scalar(179, 255, 255), imageR2);
-		imageR = imageR1 + imageR2;
-		inRange(imageHSV, Scalar(25, 0, 0), Scalar(60, 255, 255), imageY);
-		inRange(imageHSV, Scalar(90, 0, 0), Scalar(130, 255, 255), imageB);
-		inRange(imageHSV, Scalar(7, 0, 0), Scalar(20, 255, 255), imageNB);
-		imageTest = imageR + imageY + imageB;*/
-
-		inRange(image1, Scalar(lowH, lowS, lowV), Scalar(highH, highS, highV), image1out);
-		inRange(image2, Scalar(lowH, lowS, lowV), Scalar(highH, highS, highV), image2out);
-		inRange(image3, Scalar(lowH, lowS, lowV), Scalar(highH, highS, highV), image3out);
-		inRange(image4, Scalar(lowH, lowS, lowV), Scalar(highH, highS, highV), image4out);
-		inRange(image5, Scalar(lowH, lowS, lowV), Scalar(highH, highS, highV), image5out);
-
-		imshow("scr1", image1in);
-		imshow("mask1", image1out);
-
-		imshow("scr2", image2in);
-		imshow("mask2", image2out);
-
-		imshow("scr3", image3in);
-		imshow("mask3", image3out);
-
-		imshow("scr4", image4in);
-		imshow("mask4", image4out);
-
-		imshow("scr5", image5in);
-		imshow("mask5", image5out);
-
-		if (waitKey(1) == 27) {
-			break;
-		}
-		/*if (waitKey(1) == 32) {
-			read = false;
-		}*/
+	for (i = 0; i < 5; i++) {
+		s[6] = i + 49;
+		getCircles(values[s], s);
 	}
-	/*imwrite("image01RGB.jpg", imageRGB);
-	imwrite("image02HSV.jpg", imageHSV);
-	imwrite("image03Red.jpg", imageR);
-	imwrite("image04Yellow.jpg", imageY);
-	imwrite("image05Blue.jpg", imageB);
-	imwrite("image06Circle.jpg", imageCir);
-	imwrite("image07Edge.jpg", imageEdge);
-	imwrite("image08Out.jpg", imageOut);
-	imwrite("image09Test.jpg", imageTest);*/
+}
+
+void getCircles(json vals, char* s) {
+	Mat imageIn, image;
+	char outName[] = "Image x out.jpg";
+
+	imageIn = imread(s, CV_LOAD_IMAGE_COLOR);
+	cvtColor(imageIn, image, COLOR_BGR2HSV);
+
+	getRed(&imageIn, &image, vals["R"]);
+	getYel(&imageIn, &image, vals["Y"]);
+	getBlu(&imageIn, &image, vals["B"]);
+
+	outName[6] = s[6];
+	imwrite(outName, imageIn);
+}
+
+void getRed(Mat* imageIn, Mat* image, json vals) {
+	Mat redTmp, imageR;
+	vector<Vec3f> circles;
+
+	inRange(*image, Scalar(170, 180, 120), Scalar(178, 215, 255), imageR);
+	inRange(*image, Scalar(0, 132, 50), Scalar(5, 255, 180), redTmp);
+	imageR = imageR + redTmp;
+
+	dilate(imageR, imageR, Mat(), Point(-1, -1), vals["d1"], 1, 1);
+	erode(imageR, imageR, Mat(), Point(-1, -1), vals["e1"], 1, 1);
+	dilate(imageR, imageR, Mat(), Point(-1, -1), vals["d2"], 1, 1);
+	erode(imageR, imageR, Mat(), Point(-1, -1), vals["e2"], 1, 1);
+
+	GaussianBlur(imageR, imageR, Size(vals["gaus"], vals["gaus"]), -1, -1);
+
+	HoughCircles(imageR, circles, CV_HOUGH_GRADIENT, 1, vals["cMin"], 200, vals["dist"], 30, 110);
+
+	for (size_t i = 0; i < circles.size(); i++) {
+		Point c(cvRound(circles[i][0]), cvRound(circles[i][1]));
+		int r = cvRound(circles[i][2]);
+		circle(*imageIn, c, 10, Scalar(255, 255, 0), -1, 8, 0);
+		circle(*imageIn, c, r, Scalar(0, 0, 255), 10, 8, 0);
+	}
+}
+
+void getYel(Mat* imageIn, Mat* image, json vals) {
+	Mat imageY;
+	vector<Vec3f> circles;
+
+	inRange(*image, Scalar(25, 50, 106), Scalar(80, 255, 255), imageY);
+
+	dilate(imageY, imageY, Mat(), Point(-1, -1), vals["d1"], 1, 1);
+	erode(imageY, imageY, Mat(), Point(-1, -1), vals["e1"], 1, 1);
+	dilate(imageY, imageY, Mat(), Point(-1, -1), vals["d2"], 1, 1);
+	erode(imageY, imageY, Mat(), Point(-1, -1), vals["e2"], 1, 1);
+
+	GaussianBlur(imageY, imageY, Size(vals["gaus"], vals["gaus"]), -1, -1);
+
+	HoughCircles(imageY, circles, CV_HOUGH_GRADIENT, 1, vals["cMin"], 200, vals["dist"], 30, 110);
+
+	for (size_t i = 0; i < circles.size(); i++) {
+		Point c(cvRound(circles[i][0]), cvRound(circles[i][1]));
+		int r = cvRound(circles[i][2]);
+		circle(*imageIn, c, 10, Scalar(255, 0, 155), -1, 8, 0);
+		circle(*imageIn, c, r, Scalar(0, 255, 100), 10, 8, 0);
+	}
+}
+
+void getBlu(Mat* imageIn, Mat* image, json vals) {
+	Mat imageB;
+	vector<Vec3f> circles;
+
+	inRange(*image, Scalar(105, 175, 30), Scalar(120, 255, 240), imageB);
+
+	dilate(imageB, imageB, Mat(), Point(-1, -1), vals["d1"], 1, 1);
+	erode(imageB, imageB, Mat(), Point(-1, -1), vals["e1"], 1, 1);
+	dilate(imageB, imageB, Mat(), Point(-1, -1), vals["d2"], 1, 1);
+	erode(imageB, imageB, Mat(), Point(-1, -1), vals["e2"], 1, 1);
+
+	GaussianBlur(imageB, imageB, Size(vals["gaus"], vals["gaus"]), -1, -1);
+
+	HoughCircles(imageB, circles, CV_HOUGH_GRADIENT, 1, vals["cMin"], 200, vals["dist"], 30, 110);
+
+	for (size_t i = 0; i < circles.size(); i++) {
+		Point c(cvRound(circles[i][0]), cvRound(circles[i][1]));
+		int r = cvRound(circles[i][2]);
+		circle(*imageIn, c, 10, Scalar(0, 255, 255), -1, 8, 0);
+		circle(*imageIn, c, r, Scalar(255, 0, 0), 10, 8, 0);
+	}
 }
