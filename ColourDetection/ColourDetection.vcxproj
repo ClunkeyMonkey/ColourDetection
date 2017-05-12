@@ -142,6 +142,16 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="Image 1.jpg" />
+    <Image Include="Image 2.jpg" />
+    <Image Include="Image 3.jpg" />
+    <Image Include="Image 4.jpg" />
+    <Image Include="Image 5.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="json.hpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
