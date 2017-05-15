@@ -34,7 +34,6 @@ int main() {
 			{ "Y",{ { "d1",1 },{ "e1",2 },{ "d2",1 },{ "e2",1 },{ "gaus",9 },{ "cMin",56 },{ "dist",26 } } } } }
 	};
 
-	Mat image1, image2, image3, image4, image5;
 	char s[] = "Image x.jpg";
 	int i = 0;
 
